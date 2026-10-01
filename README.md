@@ -95,7 +95,10 @@ curl -s localhost:8080/v1/chat/completions -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"Explain how a hash map works."}],"max_tokens":200}' > /dev/null
 ```
 
+## Host and GPU metrics
+
+`node-exporter` (:9100) and `nvidia-gpu-exporter` (:9835) run alongside Prometheus and feed the dashboard's Hardware row and the "Where is the time going" overlay. The GPU exporter doesn't use the NVIDIA container toolkit. It mounts the host's `nvidia-smi`, `libnvidia-ml.so.1` and `/dev/nvidia*` devices directly, so those paths in `docker-compose.yml` must match your driver install.
+
 ## Possible next steps
 
-- GPU metrics (utilization, VRAM, power, temperature) via an NVIDIA exporter. This needs the NVIDIA container toolkit.
-- A benchmark runner that records results with model, quantization, context size and `-ngl` labels, to compare runs over time.
+See [TODO.md](TODO.md).
