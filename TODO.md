@@ -23,7 +23,8 @@ Goal: make the stack better at identifying bottlenecks and suggesting improvemen
 
 ## 3. Correlation
 
-- [x] "Where is the time going" row (KV usage still to add)
+- [x] "Where is the time going" row
+- [ ] Add KV usage to the "Where is the time going" row (needs `/slots`)
 - [ ] `llamacpp_config_info{model,quant,ngl,ctx,build} 1` info metric so runs can be compared by label
 - [ ] Grafana annotations for config changes and restarts
 
@@ -43,14 +44,26 @@ Goal: make the stack better at identifying bottlenecks and suggesting improvemen
 - [ ] Sweep script around `llama-bench` over `-ngl`, `-b`/`-ub`, threads, flash attention, KV cache quant, context size
 - [ ] Publish results to Prometheus (Pushgateway or textfile collector), labeled by config
 - [ ] Grafana table comparing configs to show the best one for this hardware
+- [ ] Quick A/B: restart llama-server with `--no-mmap` (or `--mlock`) to see if the page-fault spikes and the ~9 tok/s dips go away
+- [ ] Test `-ngl 99 --n-cpu-moe N` (or `-ot` for experts) instead of `-ngl 30`: generation is CPU-bound with the GPU mostly idle
+- [ ] Alert on major page faults / disk reads while generating (model paging)
 
 ## 6. Optional
 
 - [ ] LLM proxy/tracing (LiteLLM or Langfuse) for time-to-first-token and per-caller latency. Only worth it if more than one client uses the server.
 
+## 7. Dashboard polish
+
+- [ ] Per-core CPU panel: replace 12 lines with avg/max (or bar gauge/heatmap)
+- [ ] GPU temperature / power: put power on a right-hand axis
+- [ ] Page faults / disk read: separate axes (disk read is invisible today)
+- [ ] Token throughput: give generation its own axis/panel so prompt spikes don't flatten it
+- [ ] One color per concept across panels (prompt, generation, power, memory bandwidth)
+- [ ] Thresholds on the stat tiles (currently always green) once baselines exist
+
 ## Housekeeping
 
-- [ ] VRAM was ~15.5 of 16 GB at idle with `-ngl 30 -c 64000`: check whether that is the model + KV cache or a leak, and re-tune `-ngl`/`-c`
+- [x] VRAM ~15.4 of 16 GB: not a leak (flat 15.44-15.50 GB over 7d; llama-server holds 13.9 GB, the rest is desktop/other processes). Re-tuning `-ngl`/`-c` is left for the benchmark sweep
 - [ ] Update README (layout, dashboard table, "Possible next steps") as items land
-- [ ] Pin image tags instead of `:latest`
-- [ ] Change the default Grafana admin password
+- [x] Pin image tags instead of `:latest`
+- [x] Change the default Grafana admin password

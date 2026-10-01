@@ -2,7 +2,7 @@
 # Host networking lets Prometheus scrape it without rebinding llama-server.
 services:
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.15.0
     container_name: prometheus
     restart: unless-stopped
     network_mode: host
@@ -16,7 +16,7 @@ services:
       - prometheus-data:/prometheus
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.2.2
     container_name: grafana
     restart: unless-stopped
     network_mode: host
@@ -33,7 +33,7 @@ services:
       - prometheus
 
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.12.1
     container_name: node-exporter
     restart: unless-stopped
     network_mode: host
