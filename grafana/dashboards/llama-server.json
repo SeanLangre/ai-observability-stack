@@ -483,7 +483,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "light-purple"
+                  "fixedColor": "pink"
                 }
               }
             ]
@@ -907,24 +907,10 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "min": 0
         },
         "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "generation tok/s"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "green"
-                }
-              }
-            ]
-          },
           {
             "matcher": {
               "id": "byName",
@@ -943,6 +929,37 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "generation tok/s"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisSoftMax",
+                "value": 100
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "% / generation tok/s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "GPU util %"
             },
             "properties": [
@@ -952,6 +969,18 @@
                   "mode": "fixed",
                   "fixedColor": "purple"
                 }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisSoftMax",
+                "value": 100
+              },
+              {
+                "id": "min",
+                "value": 0
               }
             ]
           },
@@ -967,6 +996,18 @@
                   "mode": "fixed",
                   "fixedColor": "yellow"
                 }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisSoftMax",
+                "value": 100
+              },
+              {
+                "id": "min",
+                "value": 0
               }
             ]
           },
@@ -982,6 +1023,18 @@
                   "mode": "fixed",
                   "fixedColor": "dark-purple"
                 }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisSoftMax",
+                "value": 100
+              },
+              {
+                "id": "min",
+                "value": 0
               }
             ]
           },
@@ -997,6 +1050,18 @@
                   "mode": "fixed",
                   "fixedColor": "red"
                 }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisSoftMax",
+                "value": 100
+              },
+              {
+                "id": "min",
+                "value": 0
               }
             ]
           }
@@ -1057,7 +1122,8 @@
             "uid": "prometheus"
           }
         }
-      ]
+      ],
+      "description": "Left axis: prompt tok/s. Right axis (0-100): generation tok/s and the percentages (GPU, CPU, VRAM, context used)."
     },
     {
       "id": 17,
@@ -1152,7 +1218,7 @@
         {
           "refId": "A",
           "expr": "llamacpp_config_info",
-          "legendFormat": "ngl={{ngl}} ctx={{ctx}} {{quant}} {{model}}",
+          "legendFormat": "ngl={{ngl}} cpu-moe={{n_cpu_moe}} ctx={{ctx}} {{quant}} {{model}}",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
