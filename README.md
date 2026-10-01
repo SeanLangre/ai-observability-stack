@@ -1,4 +1,4 @@
-Yes. I’d structure it so **llama.cpp is the inference engine, Prometheus is the time-series store, Grafana is visualization, and MCP is the control/benchmark API**.
+**llama.cpp is the inference engine, Prometheus is the time-series store, Grafana is visualization, and MCP is the control/benchmark API**.
 
 ```text
                          ┌─────────────────────┐
