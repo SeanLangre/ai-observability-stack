@@ -13,19 +13,19 @@ Goal: make the stack better at identifying bottlenecks and suggesting improvemen
 
 ## 2. More from llama-server
 
-- [ ] KV cache usage: this llama-server build exports no `kv_cache_*` metrics. Use `/slots` (below) or `llamacpp:n_tokens_max` vs `-c` instead
+- [x] KV cache usage: `llamacpp_context_used_ratio` from `/slots` (active requests only)
 - [ ] Speculative decoding acceptance rate panel (`spec_decode_num_accepted_tokens_total / spec_decode_num_draft_tokens_total`), if used
 - [ ] Prompt cache hit rate (`prompt_tokens_cached_total` vs `prompt_tokens_total`)
 - [ ] Deferred requests as a distinct signal (`requests_deferred > 0`)
 - [ ] Prompt vs. generation share of busy time, to guide `-b`/`-ub` and `-ngl` tuning
-- [ ] Pull `/slots` and `/props` into Prometheus (script or `json_exporter`)
-  - [ ] Per-slot state, context fill, prompt cache hits
+- [x] Pull `/slots` and `/props` into Prometheus (`slots-exporter/`, port 9840)
+  - [x] Per-slot state, context fill, prompt cache hits
 
 ## 3. Correlation
 
 - [x] "Where is the time going" row
-- [ ] Add KV usage to the "Where is the time going" row (needs `/slots`)
-- [ ] `llamacpp_config_info{model,quant,ngl,ctx,build} 1` info metric so runs can be compared by label
+- [x] Add KV usage to the "Where is the time going" row (needs `/slots`)
+- [x] `llamacpp_config_info{model,quant,ngl,ctx,build,...} 1` info metric (flags read from /proc)
 - [ ] Grafana annotations for config changes and restarts
 
 ## 4. Alerting

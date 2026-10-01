@@ -61,6 +61,18 @@ services:
       - /usr/bin/nvidia-smi:/usr/bin/nvidia-smi:ro
       - /usr/lib/libnvidia-ml.so.1:/usr/lib/libnvidia-ml.so.1:ro
 
+  # Turns llama-server's /slots and /props (plus launch flags from /proc) into
+  # metrics: per-slot state, context in use, llamacpp_config_info.
+  slots-exporter:
+    image: python:3.13-slim
+    container_name: slots-exporter
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command: ["python", "-u", "/app/exporter.py"]
+    volumes:
+      - ./slots-exporter/exporter.py:/app/exporter.py:ro
+
 volumes:
   prometheus-data:
   grafana-data:
