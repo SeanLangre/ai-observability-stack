@@ -2,7 +2,10 @@
 
 Goal: make the stack better at identifying bottlenecks and suggesting improvements, not just showing that the server is slow.
 
-Context: single user, one RTX 5060 Ti (16 GB), one llama-server. Generation is CPU-bound with the GPU mostly idle, and the speed dips line up with major page faults. Tuning matters more than alerting.
+Context: single user, one RTX 5060 Ti (16 GB), one llama-server. Tuning matters more than alerting.
+
+Baseline (`-ngl 30 -c 64000`): ~9.9 tok/s generation, ~419 tok/s prompt, GPU mostly idle, CPU-bound.
+Current (`-ngl 99 --n-cpu-moe 10 -c 64000`, ~10 min of real use): ~47.8 tok/s generation (min 40, max 52), ~623 tok/s prompt, GPU util ~59%, VRAM ~0.5 GiB free.
 
 ## Done
 
@@ -18,9 +21,11 @@ Context: single user, one RTX 5060 Ti (16 GB), one llama-server. Generation is C
 
 Change one thing at a time and compare runs by the `llamacpp_config_info` labels.
 
-- [ ] A/B `--no-mmap` (or `--mlock`): do the page-fault spikes and the ~9 tok/s dips go away?
-- [ ] `-ngl 99 --n-cpu-moe N` (or `-ot` for expert tensors) instead of `-ngl 30`: keep attention on the GPU, experts on the CPU
-- [ ] Check whether generation slowdown follows context growth (now visible via `llamacpp_context_used_ratio`)
+- [x] `-ngl 99 --n-cpu-moe 10`: ~4.8x faster generation (9.9 to 47.8 tok/s) at about the same VRAM, and it held ~48 tok/s at 30-50k context
+- [ ] Try `--n-cpu-moe 8`/`9` (less on the CPU) if VRAM allows; only ~0.5 GiB is free, so watch for out-of-memory
+- [x] Update `run.sh` and the README to the new flags
+- [ ] A/B `--no-mmap`: low priority, little paging seen (about 1.35 GB read and ~7k major faults per hour with the old config). `--mlock` is not usable with the 8 MiB `ulimit -l`
+- [x] Check whether generation slowdown follows context growth: no, speed stayed ~48 tok/s at 30-50k context on the new config, so the earlier decline was the CPU-bound layers, not context
 - [ ] Re-tune `-c` and `-ngl` given VRAM headroom; try `-b`/`-ub`, threads, flash attention, KV cache quant
 - [ ] Record the winning config and numbers in the README
 
@@ -49,8 +54,7 @@ Only what is useful when not watching the dashboard.
 
 ## Housekeeping
 
-- [ ] Update README as items land: layout (`slots-exporter/`), dashboard panels, new metrics, "Possible next steps", and the Grafana password note (`admin/admin` is only the default)
-- [ ] `run.sh` still says log in with `admin/admin`
+- [ ] Keep the README up to date as items land (layout, dashboard panels, metrics done as of the slots exporter)
 
 ## Won't do for now
 
