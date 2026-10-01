@@ -11,7 +11,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Generation tok/s (avg)",
+      "title": "Generation tok/s (5m avg)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -25,14 +25,23 @@
       "fieldConfig": {
         "defaults": {
           "unit": "none",
-          "decimals": 1
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "llamacpp:predicted_tokens_seconds",
+          "expr": "rate(llamacpp:tokens_predicted_total[5m]) / rate(llamacpp:tokens_predicted_seconds_total[5m])",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -43,7 +52,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Prompt tok/s (avg)",
+      "title": "Prompt tok/s (5m avg)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -57,14 +66,23 @@
       "fieldConfig": {
         "defaults": {
           "unit": "none",
-          "decimals": 1
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
       "targets": [
         {
           "refId": "A",
-          "expr": "llamacpp:prompt_tokens_seconds",
+          "expr": "rate(llamacpp:prompt_tokens_total[5m]) / rate(llamacpp:prompt_seconds_total[5m])",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -89,7 +107,16 @@
       "fieldConfig": {
         "defaults": {
           "unit": "none",
-          "decimals": 1
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -121,7 +148,16 @@
       "fieldConfig": {
         "defaults": {
           "unit": "none",
-          "decimals": 1
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
