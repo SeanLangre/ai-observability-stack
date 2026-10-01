@@ -54,11 +54,11 @@ Goal: make the stack better at identifying bottlenecks and suggesting improvemen
 
 ## 7. Dashboard polish
 
-- [ ] Per-core CPU panel: replace 12 lines with avg/max (or bar gauge/heatmap)
-- [ ] GPU temperature / power: put power on a right-hand axis
-- [ ] Page faults / disk read: separate axes (disk read is invisible today)
-- [ ] Token throughput: give generation its own axis/panel so prompt spikes don't flatten it
-- [ ] One color per concept across panels (prompt, generation, power, memory bandwidth)
+- [x] Per-core CPU panel: replace 12 lines with avg/max (or bar gauge/heatmap)
+- [x] GPU temperature / power: put power on a right-hand axis
+- [x] Page faults / disk read: separate axes (disk read is invisible today)
+- [x] Token throughput: give generation its own axis/panel so prompt spikes don't flatten it
+- [x] One color per concept across panels (prompt, generation, power, memory bandwidth)
 - [ ] Thresholds on the stat tiles (currently always green) once baselines exist
 
 ## Housekeeping
