@@ -2,68 +2,62 @@
 
 Goal: make the stack better at identifying bottlenecks and suggesting improvements, not just showing that the server is slow.
 
-## 1. Host and hardware metrics (highest payoff)
+Context: single user, one RTX 5060 Ti (16 GB), one llama-server. Generation is CPU-bound with the GPU mostly idle, and the speed dips line up with major page faults. Tuning matters more than alerting.
 
-- [x] `node_exporter` (compose service, host networking, localhost only) and scrape job
-- [x] `nvidia_gpu_exporter` for the RTX 5060 Ti (host nvidia-smi + devices mounted, no container toolkit needed)
-- [x] "Hardware" dashboard row: GPU util/memory bandwidth, VRAM, temp/power, per-core CPU, RAM/swap, major faults/disk reads
-- [x] "Where is the time going" overlay panel (tok/s vs GPU vs CPU vs VRAM)
-- [ ] Process exporter for the llama-server PID (RSS, CPU time)
+## Done
+
+- [x] `node_exporter` and `nvidia_gpu_exporter` (host networking, localhost only) with scrape jobs
+- [x] Hardware dashboard row: GPU util/memory bandwidth, VRAM, temp/power, CPU, RAM/swap, page faults/disk reads
+- [x] "Where is the time going" overlay panel (tok/s vs GPU vs CPU vs VRAM vs context used)
+- [x] `slots-exporter/` (port 9840): per-slot state, context in use (`llamacpp_context_used_ratio`), prompt cache, `llamacpp_config_info` (launch flags read from /proc), server start time
+- [x] Dashboard polish: per-core CPU replaced by avg/max, separate axes for temp/power and faults/disk, one color per concept
+- [x] VRAM check: ~15.4 of 16 GB is flat over 7d (llama-server holds 13.9 GB, the rest is desktop), not a leak
+- [x] Pinned image tags, changed the Grafana admin password
+
+## 1. Tuning experiments (next, highest payoff)
+
+Change one thing at a time and compare runs by the `llamacpp_config_info` labels.
+
+- [ ] A/B `--no-mmap` (or `--mlock`): do the page-fault spikes and the ~9 tok/s dips go away?
+- [ ] `-ngl 99 --n-cpu-moe N` (or `-ot` for expert tensors) instead of `-ngl 30`: keep attention on the GPU, experts on the CPU
+- [ ] Check whether generation slowdown follows context growth (now visible via `llamacpp_context_used_ratio`)
+- [ ] Re-tune `-c` and `-ngl` given VRAM headroom; try `-b`/`-ub`, threads, flash attention, KV cache quant
+- [ ] Record the winning config and numbers in the README
+
+## 2. Cheap observability gaps (PromQL-only, no new components)
+
 - [ ] GPU clocks / throttle reasons panel (`nvidia_smi_clocks_*`, `clocks_event_reasons_*`)
-
-## 2. More from llama-server
-
-- [x] KV cache usage: `llamacpp_context_used_ratio` from `/slots` (active requests only)
-- [ ] Speculative decoding acceptance rate panel (`spec_decode_num_accepted_tokens_total / spec_decode_num_draft_tokens_total`), if used
 - [ ] Prompt cache hit rate (`prompt_tokens_cached_total` vs `prompt_tokens_total`)
+- [ ] Prompt vs. generation share of busy time (to guide `-b`/`-ub`)
 - [ ] Deferred requests as a distinct signal (`requests_deferred > 0`)
-- [ ] Prompt vs. generation share of busy time, to guide `-b`/`-ub` and `-ngl` tuning
-- [x] Pull `/slots` and `/props` into Prometheus (`slots-exporter/`, port 9840)
-  - [x] Per-slot state, context fill, prompt cache hits
+- [ ] Grafana annotations for restarts and config changes (from `llamacpp_server_start_time_seconds` / `llamacpp_config_info`), so A/B runs are marked on the graphs
+- [ ] Stat tile thresholds (currently always green) once baselines are known from the experiments
+- [ ] Page faults / disk read: color threshold on the panel to flag model paging
 
-## 3. Correlation
+## 3. Minimal alerting
 
-- [x] "Where is the time going" row
-- [x] Add KV usage to the "Where is the time going" row (needs `/slots`)
-- [x] `llamacpp_config_info{model,quant,ngl,ctx,build,...} 1` info metric (flags read from /proc)
-- [ ] Grafana annotations for config changes and restarts
+Only what is useful when not watching the dashboard.
 
-## 4. Alerting
+- [ ] `prometheus/alerts.yml`: scrape target down, and major page faults while generating
+- [ ] Decide whether a notification channel is worth it at all (Grafana contact point). Skip if alerts only show in the UI
 
-- [ ] Prometheus alert rules (`prometheus/alerts.yml`)
-  - [ ] Generation tok/s below baseline
-  - [ ] Sustained deferrals
-  - [ ] KV cache above 90%
-  - [ ] GPU temperature / throttling
-  - [ ] Scrape target down
-- [ ] Recording rules for the tok/s ratios so dashboard queries stay cheap at 30d retention
-- [ ] Decide on a notification channel (Grafana contact point)
+## 4. Benchmark sweep (after the manual experiments show what is worth sweeping)
 
-## 5. Benchmarking
-
-- [ ] Sweep script around `llama-bench` over `-ngl`, `-b`/`-ub`, threads, flash attention, KV cache quant, context size
+- [ ] Sweep script around `llama-bench` over the settings that mattered in section 1
 - [ ] Publish results to Prometheus (Pushgateway or textfile collector), labeled by config
 - [ ] Grafana table comparing configs to show the best one for this hardware
-- [ ] Quick A/B: restart llama-server with `--no-mmap` (or `--mlock`) to see if the page-fault spikes and the ~9 tok/s dips go away
-- [ ] Test `-ngl 99 --n-cpu-moe N` (or `-ot` for experts) instead of `-ngl 30`: generation is CPU-bound with the GPU mostly idle
-- [ ] Alert on major page faults / disk reads while generating (model paging)
-
-## 6. Optional
-
-- [ ] LLM proxy/tracing (LiteLLM or Langfuse) for time-to-first-token and per-caller latency. Only worth it if more than one client uses the server.
-
-## 7. Dashboard polish
-
-- [x] Per-core CPU panel: replace 12 lines with avg/max (or bar gauge/heatmap)
-- [x] GPU temperature / power: put power on a right-hand axis
-- [x] Page faults / disk read: separate axes (disk read is invisible today)
-- [x] Token throughput: give generation its own axis/panel so prompt spikes don't flatten it
-- [x] One color per concept across panels (prompt, generation, power, memory bandwidth)
-- [ ] Thresholds on the stat tiles (currently always green) once baselines exist
 
 ## Housekeeping
 
-- [x] VRAM ~15.4 of 16 GB: not a leak (flat 15.44-15.50 GB over 7d; llama-server holds 13.9 GB, the rest is desktop/other processes). Re-tuning `-ngl`/`-c` is left for the benchmark sweep
-- [ ] Update README (layout, dashboard table, "Possible next steps") as items land
-- [x] Pin image tags instead of `:latest`
-- [x] Change the default Grafana admin password
+- [ ] Update README as items land: layout (`slots-exporter/`), dashboard panels, new metrics, "Possible next steps", and the Grafana password note (`admin/admin` is only the default)
+- [ ] `run.sh` still says log in with `admin/admin`
+
+## Won't do for now
+
+Revisit only if the setup changes (unattended server, more clients, more GPUs).
+
+- Process exporter for the llama-server PID: redundant with node_exporter and GPU metrics for a single server
+- Speculative decoding acceptance panel: only if speculative decoding is enabled
+- Alerts on tok/s below baseline, sustained deferrals, KV above 90%, GPU temp/throttling: you see these on the dashboard while using the model, and VRAM and temperature are stable
+- Recording rules: only if dashboards get slow at 30d retention
+- LLM proxy/tracing (LiteLLM or Langfuse): only worth it with more than one client
