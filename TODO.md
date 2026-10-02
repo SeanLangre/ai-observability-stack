@@ -32,8 +32,8 @@ Change one thing at a time and compare runs by the `llamacpp_config_info` labels
 ## 2. Cheap observability gaps (PromQL-only, no new components)
 
 - [ ] GPU clocks / throttle reasons panel (`nvidia_smi_clocks_*`, `clocks_event_reasons_*`)
-- [ ] Prompt cache hit rate (`prompt_tokens_cached_total` vs `prompt_tokens_total`)
-- [ ] Prompt vs. generation share of busy time (to guide `-b`/`-ub`)
+- [x] Prompt cache hit rate (`prompt_tokens_cached_total` vs `prompt_tokens_total`)
+- [x] Prompt vs. generation share of busy time (to guide `-b`/`-ub`)
 - [ ] Deferred requests as a distinct signal (`requests_deferred > 0`)
 - [ ] Grafana annotations for restarts and config changes (from `llamacpp_server_start_time_seconds` / `llamacpp_config_info`), so A/B runs are marked on the graphs
 - [ ] Stat tile thresholds (currently always green) once baselines are known from the experiments

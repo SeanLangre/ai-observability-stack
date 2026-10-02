@@ -19,6 +19,8 @@ Prometheus, Grafana and the exporters use `network_mode: host` so they can reach
 
 ```text
 .
+├── .env.example                               # paths for run.sh (copy to .env)
+├── run.sh                                     # starts the stack, then llama-server
 ├── docker-compose.yml                         # Prometheus, Grafana, node/GPU/slots exporters
 ├── prometheus/
 │   └── prometheus.yml                         # scrape config
@@ -33,6 +35,8 @@ Prometheus, Grafana and the exporters use `network_mode: host` so they can reach
 ```
 
 ## Running
+
+Shortcut: copy `.env.example` to `.env`, set `LLAMA_CPP_DIR` and `MODEL_PATH`, then `./run.sh` does steps 1 and 2 (stack first, then llama-server in the foreground). Flags can be overridden per run, e.g. `N_CPU_MOE=9 ./run.sh` or `EXTRA_ARGS="-ctk q8_0 -ctv q8_0" ./run.sh`.
 
 ### 1. Start llama-server with `--metrics`
 
@@ -84,6 +88,8 @@ The graphs fill in once the model serves requests.
 | Running config | `llamacpp_config_info` |
 | Hardware row | `nvidia_smi_*` (GPU, VRAM, temp, power), `node_cpu_*`, `node_memory_*`, `node_vmstat_pgmajfault`, `node_disk_*` |
 | Where is the time going | tok/s overlaid with GPU util, CPU avg, VRAM % and `llamacpp_context_used_ratio` |
+| Prompt cache hit rate (5m) | `rate(llamacpp:prompt_tokens_cached_total[5m]) / (rate(...cached_total[5m]) + rate(llamacpp:prompt_tokens_total[5m]))` |
+| Busy time: prompt vs generation | `rate(llamacpp:prompt_seconds_total[5m])`, `rate(llamacpp:tokens_predicted_seconds_total[5m])`, stacked as share of wall time |
 
 The speed panels use counter ratios rather than llama-server's `llamacpp:predicted_tokens_seconds` / `llamacpp:prompt_tokens_seconds` gauges. Those gauges reset each time `/metrics` is read, so at a 5s scrape interval they mostly read 0.
 
