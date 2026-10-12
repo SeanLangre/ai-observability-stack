@@ -4,7 +4,7 @@ Prometheus + Grafana monitoring for a local [llama.cpp](https://github.com/ggml-
 
 llama-server runs natively on the host (not in Docker). It exposes Prometheus metrics on `/metrics`, Prometheus scrapes them every 5s, and Grafana shows them on a pre-provisioned dashboard.
 
-![llama-server dashboard in Grafana](prometheus-grafana.png)
+![llama-server dashboard in Grafana](images/scrn3-graf.png)
 
 ```text
 ┌────────────────────────┐   /metrics   ┌────────────┐   PromQL   ┌───────────┐
@@ -94,6 +94,20 @@ The graphs fill in once the model serves requests.
 The speed panels use counter ratios rather than llama-server's `llamacpp:predicted_tokens_seconds` / `llamacpp:prompt_tokens_seconds` gauges. Those gauges reset each time `/metrics` is read, so at a 5s scrape interval they mostly read 0.
 
 Grafana re-reads `grafana/dashboards/*.json` automatically, so edits to the file show up after a page refresh.
+
+### Screenshots
+
+Hardware row:
+
+![Hardware row: GPU, VRAM, CPU, RAM and paging](images/scrn1-graf.png)
+
+"Where is the time going" overlay, context in use per slot, and the running config:
+
+![Where is the time going, context in use and running config](images/scrn2-graf.png)
+
+Prompt cache hit rate and busy time split:
+
+![Prompt cache hit rate and busy time panels](images/scrn-prompt-cache.png)
 
 ## Checking it works
 
