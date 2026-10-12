@@ -37,6 +37,28 @@ Prometheus, Grafana and the exporters use `network_mode: host` so they can reach
 </details>
 
 <details open>
+<summary><h2>Prerequisites</h2></summary>
+
+On the host:
+
+- [llama.cpp](https://github.com/ggml-org/llama.cpp) built with CUDA (`build/bin/llama-server`), and a GGUF model
+- Docker with the Compose plugin (`docker compose`)
+- NVIDIA driver with `nvidia-smi` (no NVIDIA container toolkit needed, see [Host and GPU metrics](#host-and-gpu-metrics))
+- `curl` for the checks below
+
+Everything else runs from pinned Docker images, so nothing else needs installing:
+
+| Component | Image | Port |
+|---|---|---|
+| Prometheus | `prom/prometheus:v3.15.0` | 9090 |
+| Grafana | `grafana/grafana:13.2.2` | 3000 |
+| node-exporter | `prom/node-exporter:v1.12.1` | 9100 |
+| nvidia-gpu-exporter | `utkuozdemir/nvidia_gpu_exporter:1.3.1` | 9835 |
+| slots-exporter | `python:3.13-slim` running `slots-exporter/exporter.py` (stdlib only, no pip packages) | 9840 |
+
+</details>
+
+<details open>
 <summary><h2>Running</h2></summary>
 
 Shortcut: copy `.env.example` to `.env`, set `LLAMA_CPP_DIR` and `MODEL_PATH`, then `./run.sh` does steps 1 and 2 (stack first, then llama-server in the foreground). Flags can be overridden per run, e.g. `N_CPU_MOE=9 ./run.sh` or `EXTRA_ARGS="-ctk q8_0 -ctv q8_0" ./run.sh`.
@@ -70,7 +92,7 @@ cd /path/to/ai-observability-stack
 docker compose up -d
 ```
 
-Both containers use `restart: unless-stopped`, so they come back after a reboot as long as Docker is enabled.
+All five containers use `restart: unless-stopped`, so they come back after a reboot as long as Docker is enabled.
 
 ### 3. Open the dashboard
 
@@ -92,7 +114,7 @@ The graphs fill in once the model serves requests.
 | Token throughput | `rate(llamacpp:tokens_predicted_total[1m])`, `rate(llamacpp:prompt_tokens_total[1m])` (generation on the right axis) |
 | Context in use by active requests | `llamacpp_slot_context_tokens`, `llamacpp_context_size_tokens` |
 | Running config | `llamacpp_config_info` |
-| Hardware row | `nvidia_smi_*` (GPU, VRAM, temp, power), `node_cpu_*`, `node_memory_*`, `node_vmstat_pgmajfault`, `node_disk_*` |
+| Hardware row | GPU utilization, VRAM, temperature and power (`nvidia_smi_*`); CPU, RAM and swap (`node_cpu_*`, `node_memory_*`); page faults and disk reads, which show the model paging from disk (`node_vmstat_pgmajfault`, `node_disk_*`) |
 | Where is the time going | tok/s overlaid with GPU util, CPU avg, VRAM % and `llamacpp_context_used_ratio` |
 | Prompt cache hit rate (5m) | `rate(llamacpp:prompt_tokens_cached_total[5m]) / (rate(...cached_total[5m]) + rate(llamacpp:prompt_tokens_total[5m]))` |
 | Busy time: prompt vs generation | `rate(llamacpp:prompt_seconds_total[5m])`, `rate(llamacpp:tokens_predicted_seconds_total[5m])`, stacked as share of wall time |
@@ -122,7 +144,8 @@ Prompt cache hit rate and busy time split:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' localhost:8080/metrics   # 200 (501 = missing --metrics, 503 = model loading)
-curl -s localhost:9090/api/v1/targets | grep -o '"health":"[a-z]*"' # "health":"up"
+curl -s localhost:9090/api/v1/targets | grep -o '"job":"[a-z-]*"\|"health":"[a-z]*"'
+# expect four jobs (llama-server, node, nvidia-gpu, llama-slots), each followed by "health":"up"
 docker compose ps
 ```
 
@@ -145,7 +168,7 @@ curl -s localhost:8080/v1/chat/completions -H 'Content-Type: application/json' \
 <details open>
 <summary><h2>Slots exporter</h2></summary>
 
-llama-server's `/metrics` has no KV cache or per-slot data in this build, and `/props` has no launch flags. `slots-exporter/exporter.py` (stdlib Python, port 9840) fills the gap:
+llama-server's `/metrics` only has speed and request counters. It doesn't say how full the context window is or which launch flags are in use. `slots-exporter/exporter.py` (stdlib Python, port 9840) fills the gap. On each scrape it reads llama-server's `/slots` (one slot is one parallel conversation) and `/props`, plus the server's command line from `/proc`, and republishes them as Prometheus metrics. This powers the context-in-use panels and the running-config panel, which labels graphs with the flags that produced them, so A/B tuning runs are easy to tell apart.
 
 | Metric | Meaning |
 |---|---|
