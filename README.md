@@ -6,16 +6,16 @@ llama-server runs natively on the host (not in Docker). It exposes Prometheus me
 
 ![llama-server dashboard in Grafana](images/scrn3-graf.png)
 
-```text
-┌────────────────────────┐   /metrics   ┌────────────┐   PromQL   ┌───────────┐
-│ llama-server (host)    │ ───────────▶ │ Prometheus │ ─────────▶ │  Grafana  │
-│ 127.0.0.1:8080         │   every 5s   │ :9090      │            │  :3000    │
-└────────────────────────┘              └────────────┘            └───────────┘
+```mermaid
+flowchart LR
+    A["llama-server (host)<br/>127.0.0.1:8080"] -->|"/metrics, every 5s"| B["Prometheus<br/>:9090"]
+    B -->|PromQL| C["Grafana<br/>:3000"]
 ```
 
 Prometheus, Grafana and the exporters use `network_mode: host` so they can reach llama-server on `127.0.0.1` without rebinding it. Everything listens on localhost only.
 
-## Layout
+<details open>
+<summary><h2>Layout</h2></summary>
 
 ```text
 .
@@ -34,7 +34,10 @@ Prometheus, Grafana and the exporters use `network_mode: host` so they can reach
         └── datasources/prometheus.yml         # Prometheus datasource
 ```
 
-## Running
+</details>
+
+<details open>
+<summary><h2>Running</h2></summary>
 
 Shortcut: copy `.env.example` to `.env`, set `LLAMA_CPP_DIR` and `MODEL_PATH`, then `./run.sh` does steps 1 and 2 (stack first, then llama-server in the foreground). Flags can be overridden per run, e.g. `N_CPU_MOE=9 ./run.sh` or `EXTRA_ARGS="-ctk q8_0 -ctv q8_0" ./run.sh`.
 
@@ -75,7 +78,10 @@ http://localhost:3000/d/llama-server/llama-server. Log in as `admin` with the va
 
 The graphs fill in once the model serves requests.
 
-## Dashboard
+</details>
+
+<details open>
+<summary><h2>Dashboard</h2></summary>
 
 | Panel | Query |
 |---|---|
@@ -109,7 +115,10 @@ Prompt cache hit rate and busy time split:
 
 ![Prompt cache hit rate and busy time panels](images/scrn-prompt-cache.png)
 
-## Checking it works
+</details>
+
+<details open>
+<summary><h2>Checking it works</h2></summary>
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' localhost:8080/metrics   # 200 (501 = missing --metrics, 503 = model loading)
@@ -124,11 +133,17 @@ curl -s localhost:8080/v1/chat/completions -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"Explain how a hash map works."}],"max_tokens":200}' > /dev/null
 ```
 
-## Host and GPU metrics
+</details>
+
+<details open>
+<summary><h2>Host and GPU metrics</h2></summary>
 
 `node-exporter` (:9100) and `nvidia-gpu-exporter` (:9835) run alongside Prometheus and feed the dashboard's Hardware row and the "Where is the time going" overlay. The GPU exporter doesn't use the NVIDIA container toolkit. It mounts the host's `nvidia-smi`, `libnvidia-ml.so.1` and `/dev/nvidia*` devices directly, so those paths in `docker-compose.yml` must match your driver install.
 
-## Slots exporter
+</details>
+
+<details open>
+<summary><h2>Slots exporter</h2></summary>
 
 llama-server's `/metrics` has no KV cache or per-slot data in this build, and `/props` has no launch flags. `slots-exporter/exporter.py` (stdlib Python, port 9840) fills the gap:
 
@@ -139,6 +154,11 @@ llama-server's `/metrics` has no KV cache or per-slot data in this build, and `/
 | `llamacpp_config_info{ngl,ctx,n_cpu_moe,quant,model,...}` | always 1; launch flags are read from the llama-server process in `/proc`, so labels follow restarts |
 | `llamacpp_server_start_time_seconds` | process start time |
 
-## Possible next steps
+</details>
+
+<details open>
+<summary><h2>Possible next steps</h2></summary>
 
 See [TODO.md](TODO.md).
+
+</details>
